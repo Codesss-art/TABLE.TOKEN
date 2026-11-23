@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Customer Sign In - TableToken</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .auth-card {
+      max-width: 440px;
+      margin: 36px auto;
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .table-welcome-banner {
+      background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+      color: #9a3412;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .table-num-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #ea580c;
+      color: #ffffff;
+      font-size: 1.3rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .phone-input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #ffffff;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .phone-input-wrap:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+    }
+    .phone-prefix {
+      padding: 12px 14px;
+      background: var(--bg-main);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-right: 1.5px solid var(--border);
+      user-select: none;
+    }
+    .phone-field {
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      padding: 12px 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">🍽️</span>
+        <div class="brand-text">
+          <h1 id="headerRestName">TableToken</h1>
+          <p>Digital Table Dining</p>
+        </div>
+      </div>
+      <div id="tableHeaderBadge" class="table-badge">
+        <span>Table #<span id="badgeTableNum">--</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="auth-card">
+      <!-- Table Confirmation Box -->
+      <div class="table-welcome-banner">
+        <div class="table-num-circle" id="bannerTableNum">--</div>
+        <div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">You're Seated At</div>
+          <div style="font-size: 1.15rem; font-weight: 900;" id="bannerTableText">Table #--</div>
+        </div>
+      </div>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; color: var(--text-main);">
+        Welcome to Dining! 👋
+      </h2>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 24px;">
+        Please enter your details to view our live menu, place orders, and track your food preparation.
+      </p>
+
+      <form id="customerLoginForm" onsubmit="handleCustomerLogin(event)">
+        <!-- Name -->
+        <div class="form-group">
+          <label class="form-label" for="customerName">Your Full Name *</label>
+          <input type="text" id="customerName" class="form-input" placeholder="e.g. Rahul Sharma" maxlength="50" required autofocus>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="form-group">
+          <label class="form-label" for="customerPhone">10-Digit Mobile Number *</label>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">+91</span>
+            <input type="tel" id="customerPhone" class="phone-field" placeholder="9876543210" maxlength="10" pattern="[6-9][0-9]{9}" required>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 4px;">
+            We use this to show your token on the screen and track past orders.
+          </span>
+        </div>
+
+        <div id="loginErrorMsg" style="display: none; color: #dc2626; font-size: 0.85rem; font-weight: 600; margin-bottom: 14px; background: #fee2e2; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid #fecaca;"></div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="margin-top: 10px;">
+          <span>Enter Menu & Order &rarr;</span>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script>
+    // Fetch active table from session
+    fetch('/api/customer/me')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.data.table) {
+          window.location.href = '/scan-error?reason=missing_qr';
+          return;
+        }
+
+        const table = data.data.table;
+        document.getElementById('badgeTableNum').innerText = table.number;
+        document.getElementById('bannerTableNum').innerText = table.number;
+        document.getElementById('bannerTableText').innerText = `Table #${table.number}`;
+        if (table.restaurant_name) {
+          document.getElementById('headerRestName').innerText = table.restaurant_name;
+        }
+
+        // If customer was already logged in, forward to menu
+        if (data.data.customer) {
+          window.location.href = '/menu';
+        }
+      })
+      .catch(() => {
+        window.location.href = '/scan-error?reason=missing_qr';
+      });
+
+    async function handleCustomerLogin(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('customerName');
+      const phoneInput = document.getElementById('customerPhone');
+      const errEl = document.getElementById('loginErrorMsg');
+      const btn = document.getElementById('submitBtn');
+
+      const name = nameInput.value.trim();
+      const phone = phoneInput.value.trim().replace(/\D/g, '');
+
+      if (!name) {
+        errEl.innerText = 'Please enter your name.';
+        errEl.style.display = 'block';
+        nameInput.focus();
+        return;
+      }
+
+      if (!/^[6-9]\d{9}$/.test(phone)) {
+        errEl.innerText = 'Please enter a valid 10-digit Indian phone number (starting with 6, 7, 8, or 9).';
+        errEl.style.display = 'block';
+        phoneInput.focus();
+        return;
+      }
+
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.innerText = 'Connecting...';
+
+      try {
+        const res = await fetch('/api/customer/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = data.redirect || '/menu';
+        } else {
+          errEl.innerText = data.error || 'Login failed. Please try again.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.innerText = 'Enter Menu & Order →';
+        }
+      } catch (err) {
+        errEl.innerText = 'Network error. Please check your connection.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerText = 'Enter Menu & Order →';
+      }
+    }
+  </script>
+</body>
+</html>

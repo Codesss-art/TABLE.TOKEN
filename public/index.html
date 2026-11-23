@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TableToken - Smart QR Table Ordering System</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .hub-hero {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #ffffff;
+      padding: 48px 20px;
+      text-align: center;
+      border-radius: var(--radius-xl);
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hub-hero h1 {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: #fb923c;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+    }
+
+    .hub-hero p {
+      font-size: 1.05rem;
+      color: #cbd5e1;
+      max-width: 620px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .screen-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+
+    .screen-card {
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .screen-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary);
+    }
+
+    .screen-badge {
+      align-self: flex-start;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      margin-bottom: 16px;
+    }
+
+    .screen-badge.customer {
+      background: #ffedd5;
+      color: #c2410c;
+    }
+
+    .screen-badge.owner {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+
+    .screen-badge.display {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .screen-icon {
+      font-size: 2.8rem;
+      margin-bottom: 12px;
+    }
+
+    .screen-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .screen-desc {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .screen-action {
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rule-box {
+      background: #f8fafc;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-container">
+      <a href="/" class="brand">
+        <span class="brand-icon">🍽️</span>
+        <div class="brand-text">
+          <h1>TableToken</h1>
+          <p>Production Restaurant OS</p>
+        </div>
+      </a>
+      <span class="badge" style="background: #f1f5f9; color: #475569;">v2.0 Real</span>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 24px; padding-bottom: 48px;">
+    <section class="hub-hero">
+      <h1>TableToken</h1>
+      <p>
+        Production-quality QR table-ordering and kitchen management for small restaurants.
+        Zero fake data, real database transactions, secure table sessions, live tokens, and TV counter status.
+      </p>
+    </section>
+
+    <!-- Important QR Rule Notice -->
+    <div class="rule-box">
+      <div
+        style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--text-main);font-size:0.95rem;margin-bottom:6px;">
+        <span>🔒</span> Access Rule: Table QR Scan Required
+      </div>
+      <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.5;">
+        In production, dining customers cannot browse or place orders without scanning their assigned table QR code.
+        Scanning saves a secure 3-hour table session and prompts for mobile sign-in.
+      </p>
+    </div>
+
+    <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 16px;">Application Roles & Screens</h2>
+    <div class="screen-cards">
+      <!-- Screen 1: Customer Menu -->
+      <a href="/menu" class="screen-card">
+        <div>
+          <span class="screen-badge customer">Role: Customer</span>
+          <div class="screen-icon">📱</div>
+          <h3 class="screen-title">Customer Dining Menu</h3>
+          <p class="screen-desc">
+            Opened by scanning the table's unique QR code. Browse dishes, filter veg/non-veg, order, and track token
+            progress with live kitchen notifications.
+          </p>
+        </div>
+        <div class="screen-action">Open Customer Experience &rarr;</div>
+      </a>
+
+      <!-- Screen 2: Owner Dashboard -->
+      <a href="/owner/login" class="screen-card">
+        <div>
+          <span class="screen-badge owner">Role: Restaurant Owner</span>
+          <div class="screen-icon">👨‍🍳</div>
+          <h3 class="screen-title">Owner & Kitchen Board</h3>
+          <p class="screen-desc">
+            Protected login with phone & bcrypt password. Live order chime, status controls, menu editor, table QR
+            placard generator, and CSV sales exports.
+          </p>
+        </div>
+        <div class="screen-action">Sign In to Kitchen &rarr;</div>
+      </a>
+
+      <!-- Screen 3: TV Display -->
+      <a href="/display" class="screen-card">
+        <div>
+          <span class="screen-badge display">Screen: Counter TV</span>
+          <div class="screen-icon">📺</div>
+          <h3 class="screen-title">Counter Status TV</h3>
+          <p class="screen-desc">
+            Public display board showing big token numbers for "Now Preparing" and "Ready for Pickup". Strictly zero
+            customer personal info for complete privacy.
+          </p>
+        </div>
+        <div class="screen-action">Open TV Display &rarr;</div>
+      </a>
+    </div>
+
+    <!-- Quick Table Simulator for Testing -->
+    <div class="card" style="padding: 24px; margin-bottom: 24px;">
+      <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">Test Table QR Codes</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+        Click any table below to test simulated QR ordering as a customer seated at that table:
+      </p>
+      <div id="simulatedTablesList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span style="font-size:0.85rem;color:var(--text-muted);">Loading tables...</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Fetch owner tables or default table scan links
+    fetch('/api/owner/tables')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data.length > 0) {
+          const container = document.getElementById('simulatedTablesList');
+          container.innerHTML = data.data.map(t => `
+            <a href="${t.scan_url}" class="btn btn-outline btn-sm" style="font-weight: 700;">
+              Table ${t.table_number}
+            </a>
+          `).join('');
+        }
+      })
+      .catch(() => {
+        // Fallback
+        const container = document.getElementById('simulatedTablesList');
+        container.innerHTML = `<span style="font-size:0.85rem;color:var(--text-muted);">Log in as owner to view and manage table QR codes.</span>`;
+      });
+  </script>
+</body>
+
+</html>

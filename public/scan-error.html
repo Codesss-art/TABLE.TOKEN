@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Table Scan Required - TableToken</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .error-card {
+      max-width: 480px;
+      margin: 40px auto;
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .qr-icon-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #ffedd5;
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+    .instruction-step {
+      display: flex;
+      align-items: flex-start;
+      text-align: left;
+      gap: 12px;
+      margin: 16px 0;
+      padding: 12px;
+      background: var(--bg-main);
+      border-radius: var(--radius-md);
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+    }
+    .demo-tables-box {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">🍽️</span>
+        <div class="brand-text">
+          <h1>TableToken</h1>
+          <p>Smart QR Restaurant Dining</p>
+        </div>
+      </div>
+      <a href="/" class="btn btn-outline btn-sm">Home</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="error-card">
+      <div class="qr-icon-circle">📱</div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: var(--text-main);">
+        Please scan the QR code at your table.
+      </h2>
+      <p style="font-size: 0.92rem; color: var(--text-muted); margin-bottom: 20px;">
+        To view our menu and order food, you must scan the unique QR code sticker placed on your dining table.
+      </p>
+
+      <div class="instruction-step">
+        <div class="step-num">1</div>
+        <div>
+          <strong style="font-size: 0.9rem;">Find the QR sticker</strong>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+            Every table has its own unique TableToken QR stand or sticker.
+          </p>
+        </div>
+      </div>
+
+      <div class="instruction-step">
+        <div class="step-num">2</div>
+        <div>
+          <strong style="font-size: 0.9rem;">Open your phone camera</strong>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+            Point your camera at the QR code and tap the link that appears on your screen.
+          </p>
+        </div>
+      </div>
+
+      <div class="instruction-step">
+        <div class="step-num">3</div>
+        <div>
+          <strong style="font-size: 0.9rem;">Sign in and order</strong>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+            Enter your mobile number to get live order tracking and kitchen notifications.
+          </p>
+        </div>
+      </div>
+
+      <!-- Developer / Testing Helper -->
+      <div id="demoHelper" class="demo-tables-box">
+        <div style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+          🛠️ Testing or Running Locally?
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">
+          Select any table below to simulate scanning a real table QR code:
+        </p>
+        <div id="demoTablesList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">Loading tables...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Fetch tables to provide quick test links for local testing
+    fetch('/api/network-info')
+      .then(res => res.json())
+      .then(info => {
+        // Fetch active table list for simulator
+        fetch('/api/display/tokens')
+          .then(() => {
+            // Fetch owner tables if accessible or generate links from network info
+            const container = document.getElementById('demoTablesList');
+            // Try fetching /api/owner/tables if logged in, otherwise show direct fallback
+            fetch('/api/owner/tables')
+              .then(r => r.json())
+              .then(data => {
+                if (data.success && data.data.length > 0) {
+                  container.innerHTML = data.data.slice(0, 10).map(t => `
+                    <a href="${t.scan_url}" class="btn btn-outline btn-sm" style="font-size:0.8rem;font-weight:700;">
+                      Table ${t.table_number}
+                    </a>
+                  `).join('');
+                } else {
+                  showManualHelp();
+                }
+              })
+              .catch(() => showManualHelp());
+          });
+      })
+      .catch(() => showManualHelp());
+
+    function showManualHelp() {
+      const container = document.getElementById('demoTablesList');
+      container.innerHTML = `
+        <p style="font-size:0.82rem;color:var(--text-muted);">
+          Please ask the restaurant manager or visit the <a href="/owner/login" style="color:var(--primary);font-weight:700;">Owner Dashboard</a> &rarr; Table QR Codes tab to view or print table QR codes.
+        </p>
+      `;
+    }
+  </script>
+</body>
+</html>

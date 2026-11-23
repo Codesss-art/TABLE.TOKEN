@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TableToken - Menu & Order</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .customer-header-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-pill {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cart-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px dashed var(--border);
+      gap: 12px;
+    }
+    .cart-item-info {
+      flex: 1;
+    }
+    .cart-item-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+    }
+    .cart-item-price {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .bill-summary {
+      background: var(--bg-main);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin: 16px 0;
+    }
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+    .bill-row.total {
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      margin-bottom: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .cancel-order-box {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .past-order-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .past-order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">🍽️</span>
+        <div class="brand-text">
+          <h1 id="headerRestTitle">TableToken</h1>
+          <p>Fresh & Fast Table Dining</p>
+        </div>
+      </div>
+      <div class="customer-header-meta">
+        <div id="tableBadgeDisplay" class="table-badge">
+          <span>📍 Table #<span id="headerTableNum">--</span></span>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openHistoryModal()" title="View Past Orders">
+          📜 Orders
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-bottom: 110px;">
+    <!-- Active Order Tracker Hero (Shown when customer has active token) -->
+    <div id="activeOrderSection" style="display: none;">
+      <div class="token-hero">
+        <div class="token-label">Live Order Token</div>
+        <div id="heroTokenNumber" class="token-number">#--</div>
+        <div id="heroTableInfo" class="token-table-info">Table #-- &bull; Placed at --:--</div>
+
+        <!-- 4 Step Status Progress -->
+        <div class="status-tracker">
+          <div id="stepReceived" class="tracker-step">
+            <div class="tracker-dot">1</div>
+            <div class="tracker-text">Received</div>
+          </div>
+          <div id="stepPreparing" class="tracker-step">
+            <div class="tracker-dot">2</div>
+            <div class="tracker-text">Preparing</div>
+          </div>
+          <div id="stepReady" class="tracker-step">
+            <div class="tracker-dot">3</div>
+            <div class="tracker-text">Ready</div>
+          </div>
+          <div id="stepPickedUp" class="tracker-step">
+            <div class="tracker-dot">4</div>
+            <div class="tracker-text">Picked Up</div>
+          </div>
+        </div>
+
+        <!-- Live Queue Metrics -->
+        <div class="live-stats-grid">
+          <div class="live-stat-card">
+            <div id="ordersAheadVal" class="live-stat-val">0</div>
+            <div class="live-stat-label">Orders Ahead</div>
+          </div>
+          <div class="live-stat-card">
+            <div id="waitTimeVal" class="live-stat-val">~0 min</div>
+            <div class="live-stat-label">Estimated Wait</div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 10px;">
+          <span>Now preparing: <strong id="nowPreparingTokensText" style="color: #fde047;">None</strong></span>
+        </div>
+      </div>
+
+      <!-- Ready Alert Banner -->
+      <div id="readyBanner" class="ready-alert-banner" style="display: none;">
+        <h3>🎉 Your order is ready!</h3>
+        <p>Please collect your fresh food from the pickup counter.</p>
+      </div>
+
+      <!-- Tracked Order Details Breakdown -->
+      <div class="card" style="padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Order Details</h4>
+          <span id="trackerTotalAmount" style="font-weight: 800; color: var(--primary-dark);">₹0</span>
+        </div>
+        <div id="trackerItemsList" style="margin-top: 10px; font-size: 0.88rem; color: var(--text-muted);">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Cancel order option (Only allowed while status is Received) -->
+        <div id="cancelOrderBox" class="cancel-order-box" style="display: none;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">Made a mistake or need changes?</span>
+          <button id="cancelOrderBtn" class="btn btn-danger btn-sm" onclick="handleCancelActiveOrder()">
+            Cancel Order
+          </button>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; gap: 8px;">
+          <button id="orderMoreBtn" class="btn btn-outline btn-sm" style="flex: 1;" onclick="scrollToMenu()">+ Order More Items</button>
+          <button id="dismissTrackerBtn" class="btn btn-secondary btn-sm" onclick="dismissTracker()">Hide Tracker</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu Section -->
+    <div id="menuSection">
+      <!-- Search & Filters -->
+      <div style="margin-top: 16px; margin-bottom: 16px;">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search delicious dishes, drinks, naans..." oninput="handleSearch(event)">
+        </div>
+
+        <!-- Category Pills -->
+        <div class="filter-pills" id="categoryPills" style="margin-bottom: 10px;">
+          <button class="pill-btn active" data-category="All" onclick="selectCategory('All')">All Items</button>
+          <button class="pill-btn" data-category="Starters" onclick="selectCategory('Starters')">Starters</button>
+          <button class="pill-btn" data-category="Mains" onclick="selectCategory('Mains')">Mains</button>
+          <button class="pill-btn" data-category="Drinks" onclick="selectCategory('Drinks')">Drinks</button>
+          <button class="pill-btn" data-category="Desserts" onclick="selectCategory('Desserts')">Desserts</button>
+        </div>
+
+        <!-- Veg / Non-Veg Diet Filter -->
+        <div class="filter-pills" id="dietPills">
+          <button class="pill-btn active" data-diet="all" onclick="selectDiet('all')">All Food</button>
+          <button class="pill-btn" data-diet="veg" onclick="selectDiet('veg')">
+            <span class="diet-dot veg"></span> Pure Veg
+          </button>
+          <button class="pill-btn" data-diet="non-veg" onclick="selectDiet('non-veg')">
+            <span class="diet-dot non-veg"></span> Non-Veg
+          </button>
+        </div>
+      </div>
+
+      <!-- Menu Items Grid -->
+      <div id="menuLoading" style="text-align: center; padding: 40px; color: var(--text-muted);">
+        Loading restaurant menu...
+      </div>
+      <div id="menuGrid" class="menu-grid" style="display: none;"></div>
+      <div id="menuEmpty" style="display: none; text-align: center; padding: 40px; color: var(--text-muted);">
+        No dishes found matching your search or filters.
+      </div>
+    </div>
+  </main>
+
+  <!-- Floating Cart Bar at Bottom -->
+  <div id="floatingCartBar" class="floating-cart-bar" style="display: none;" onclick="openCartModal()">
+    <div class="cart-bar-info">
+      <span class="cart-bar-count"><span id="cartTotalQty">0</span> Items in Cart</span>
+      <span class="cart-bar-total" id="cartTotalPrice">₹0</span>
+    </div>
+    <div class="cart-bar-action">
+      <span>View Cart</span>
+      <span>&rarr;</span>
+    </div>
+  </div>
+
+  <!-- Cart Modal / Checkout Drawer -->
+  <div id="cartModal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Your Order Cart</h3>
+        <button class="modal-close-btn" onclick="closeCartModal()">&times;</button>
+      </div>
+
+      <div id="cartItemsContainer">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="bill-summary">
+        <div class="bill-row">
+          <span>Subtotal</span>
+          <span id="billSubtotal">₹0</span>
+        </div>
+        <div class="bill-row">
+          <span>Taxes (Included)</span>
+          <span>₹0</span>
+        </div>
+        <div class="bill-row total">
+          <span>Total Payable</span>
+          <span id="billTotal">₹0</span>
+        </div>
+      </div>
+
+      <!-- Table Confirmation -->
+      <div class="form-group">
+        <label class="form-label">Ordering From Table</label>
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); background: var(--bg-main); padding: 10px 14px; border-radius: var(--radius-md); border: 1.5px solid var(--border);">
+          📍 Table #<span id="cartTableDisplay">--</span>
+        </div>
+      </div>
+
+      <!-- Special Cooking Notes -->
+      <div class="form-group">
+        <label class="form-label" for="cartNotesInput">Cooking Notes (Optional)</label>
+        <input type="text" id="cartNotesInput" class="form-input" placeholder="e.g., Less spicy, extra crisp, no onion">
+      </div>
+
+      <!-- Submit Order Button -->
+      <button id="placeOrderBtn" class="btn btn-primary btn-lg" onclick="handlePlaceOrder()">
+        <span>Place Order Now</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Past Orders History Modal -->
+  <div id="historyModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title">My Orders Today</h3>
+        <button class="modal-close-btn" onclick="closeHistoryModal()">&times;</button>
+      </div>
+      <div id="historyListContainer" style="max-height: 400px; overflow-y: auto; padding: 4px 0;">
+        <p style="text-align: center; color: var(--text-muted); padding: 20px;">Loading order history...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    // State management
+    let menuItems = [];
+    let cart = {}; // { [itemId]: { item, qty } }
+    let selectedCategory = 'All';
+    let selectedDiet = 'all';
+    let searchQuery = '';
+    let currentCustomer = null;
+    let currentTable = null;
+    let activeToken = null;
+    let liveStream = null;
+    let knownStatus = null;
+
+    // 1. Initialize Customer & Table Session
+    async function initSession() {
+      try {
+        const res = await fetch('/api/customer/me');
+        const data = await res.json();
+
+        if (!data.success || !data.data.table) {
+          window.location.href = '/scan-error?reason=missing_qr';
+          return;
+        }
+
+        if (!data.data.customer) {
+          window.location.href = '/customer/login';
+          return;
+        }
+
+        currentTable = data.data.table;
+        currentCustomer = data.data.customer;
+
+        document.getElementById('headerTableNum').innerText = currentTable.number;
+        document.getElementById('cartTableDisplay').innerText = currentTable.number;
+        if (currentTable.restaurant_name) {
+          document.getElementById('headerRestTitle').innerText = currentTable.restaurant_name;
+        }
+
+        // Restore active order from localStorage if exists
+        const storedOrder = localStorage.getItem('tabletoken_active_order');
+        if (storedOrder) {
+          try {
+            const parsed = JSON.parse(storedOrder);
+            if (parsed.tokenNumber) {
+              activeToken = parsed.tokenNumber;
+              trackOrder(activeToken);
+            }
+          } catch (_) {}
+        }
+
+        loadMenu();
+        initLiveSync();
+      } catch (err) {
+        window.location.href = '/scan-error?reason=network_error';
+      }
+    }
+
+    // 2. Load Menu from Server
+    async function loadMenu() {
+      try {
+        const res = await fetch('/api/menu');
+        const data = await res.json();
+        if (data.success) {
+          menuItems = data.data;
+          renderMenu();
+        } else {
+          showToast(data.error || 'Failed to load menu', 'error');
+        }
+      } catch (err) {
+        showToast('Error connecting to server', 'error');
+      } finally {
+        document.getElementById('menuLoading').style.display = 'none';
+      }
+    }
+
+    // 3. Render Menu
+    function renderMenu() {
+      const grid = document.getElementById('menuGrid');
+      const empty = document.getElementById('menuEmpty');
+
+      const filtered = menuItems.filter(item => {
+        if (selectedCategory !== 'All' && item.category !== selectedCategory) return false;
+        if (selectedDiet === 'veg' && item.is_veg !== 1) return false;
+        if (selectedDiet === 'non-veg' && item.is_veg === 1) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const matchName = item.name.toLowerCase().includes(q);
+          const matchDesc = item.description && item.description.toLowerCase().includes(q);
+          if (!matchName && !matchDesc) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      grid.style.display = 'grid';
+
+      grid.innerHTML = filtered.map(item => {
+        const isOutOfStock = item.is_available === 0;
+        const currentQty = cart[item.id] ? cart[item.id].qty : 0;
+
+        return `
+          <div class="menu-card ${isOutOfStock ? 'out-of-stock' : ''}">
+            <div class="menu-header-row">
+              <div class="menu-info">
+                <div class="menu-title">
+                  <span class="diet-dot ${item.is_veg ? 'veg' : 'non-veg'}" title="${item.is_veg ? 'Vegetarian' : 'Non-Vegetarian'}"></span>
+                  <span>${escapeHtml(item.name)}</span>
+                </div>
+                <div class="menu-desc">${escapeHtml(item.description || '')}</div>
+              </div>
+              <div class="menu-emoji">${item.image_emoji || (item.is_veg ? '🥗' : '🍗')}</div>
+            </div>
+
+            <div class="menu-bottom-row">
+              <div class="menu-price">${formatCurrency(item.price)}</div>
+
+              <div>
+                ${isOutOfStock ? `
+                  <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;">
+                    Out of Stock
+                  </span>
+                ` : (currentQty > 0 ? `
+                  <div class="stepper">
+                    <button class="stepper-btn" onclick="updateItemQty(${item.id}, -1)">-</button>
+                    <span class="stepper-qty">${currentQty}</span>
+                    <button class="stepper-btn" onclick="updateItemQty(${item.id}, 1)">+</button>
+                  </div>
+                ` : `
+                  <button class="btn btn-outline btn-sm" onclick="updateItemQty(${item.id}, 1)" style="font-weight:700;color:var(--primary);border-color:var(--primary);">
+                    + ADD
+                  </button>
+                `)}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // 4. Filters & Search Handlers
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      document.querySelectorAll('#categoryPills .pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === cat);
+      });
+      renderMenu();
+    }
+
+    function selectDiet(diet) {
+      selectedDiet = diet;
+      document.querySelectorAll('#dietPills .pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.diet === diet);
+      });
+      renderMenu();
+    }
+
+    function handleSearch(e) {
+      searchQuery = e.target.value;
+      renderMenu();
+    }
+
+    // 5. Cart Operations
+    function updateItemQty(itemId, delta) {
+      const item = menuItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      if (item.is_available === 0 && delta > 0) {
+        showToast('Sorry, this dish is currently out of stock.', 'error');
+        return;
+      }
+
+      const current = cart[itemId] ? cart[itemId].qty : 0;
+      const next = current + delta;
+
+      if (next <= 0) {
+        delete cart[itemId];
+      } else {
+        cart[itemId] = { item, qty: next };
+      }
+
+      updateCartUI();
+      renderMenu();
+    }
+
+    function updateCartUI() {
+      let totalQty = 0;
+      let totalPrice = 0;
+
+      for (const id in cart) {
+        totalQty += cart[id].qty;
+        totalPrice += cart[id].qty * cart[id].item.price;
+      }
+
+      const floatingBar = document.getElementById('floatingCartBar');
+      if (totalQty > 0) {
+        document.getElementById('cartTotalQty').innerText = totalQty;
+        document.getElementById('cartTotalPrice').innerText = formatCurrency(totalPrice);
+        floatingBar.style.display = 'flex';
+      } else {
+        floatingBar.style.display = 'none';
+        closeCartModal();
+      }
+
+      document.getElementById('billSubtotal').innerText = formatCurrency(totalPrice);
+      document.getElementById('billTotal').innerText = formatCurrency(totalPrice);
+
+      const itemsContainer = document.getElementById('cartItemsContainer');
+      const cartKeys = Object.keys(cart);
+
+      if (cartKeys.length === 0) {
+        itemsContainer.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Your cart is empty.</p>';
+      } else {
+        itemsContainer.innerHTML = cartKeys.map(id => {
+          const { item, qty } = cart[id];
+          return `
+            <div class="cart-item-row">
+              <div class="cart-item-info">
+                <div class="cart-item-title">
+                  <span class="diet-dot ${item.is_veg ? 'veg' : 'non-veg'}"></span>
+                  ${escapeHtml(item.name)}
+                </div>
+                <div class="cart-item-price">${formatCurrency(item.price)} each &times; ${qty} = <strong>${formatCurrency(item.price * qty)}</strong></div>
+              </div>
+              <div class="stepper">
+                <button class="stepper-btn" onclick="updateItemQty(${item.id}, -1)">-</button>
+                <span class="stepper-qty">${qty}</span>
+                <button class="stepper-btn" onclick="updateItemQty(${item.id}, 1)">+</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function openCartModal() {
+      document.getElementById('cartModal').classList.add('open');
+    }
+
+    function closeCartModal() {
+      document.getElementById('cartModal').classList.remove('open');
+    }
+
+    // 6. Place Order Handler
+    async function handlePlaceOrder() {
+      const cartKeys = Object.keys(cart);
+      if (cartKeys.length === 0) {
+        showToast('Please add items to your cart first.', 'error');
+        return;
+      }
+
+      const notes = document.getElementById('cartNotesInput').value;
+      const orderPayload = {
+        notes: notes,
+        items: cartKeys.map(id => ({
+          menu_item_id: parseInt(id, 10),
+          quantity: cart[id].qty
+        }))
+      };
+
+      const placeBtn = document.getElementById('placeOrderBtn');
+      placeBtn.disabled = true;
+      placeBtn.innerText = 'Submitting order...';
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderPayload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          playNewOrderSound();
+          showToast(`Order placed! Your Token is #${data.data.tokenNumber}`, 'success');
+
+          // Store token in localStorage
+          const activeOrder = {
+            orderId: data.data.orderId,
+            tokenNumber: data.data.tokenNumber,
+            orderDate: data.data.orderDate,
+            tableNumber: data.data.tableNumber
+          };
+          localStorage.setItem('tabletoken_active_order', JSON.stringify(activeOrder));
+          activeToken = data.data.tokenNumber;
+
+          // Clear cart
+          cart = {};
+          updateCartUI();
+          renderMenu();
+          closeCartModal();
+
+          // Open tracker hero
+          trackOrder(activeToken);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          showToast(data.error || 'Failed to place order', 'error');
+        }
+      } catch (err) {
+        showToast('Connection error. Please try again.', 'error');
+      } finally {
+        placeBtn.disabled = false;
+        placeBtn.innerText = 'Place Order Now';
+      }
+    }
+
+    // 7. Track Order Hero
+    async function trackOrder(tokenNum) {
+      if (!tokenNum) return;
+      try {
+        const res = await fetch(`/api/orders/track/${tokenNum}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          renderTracker(data.data);
+        } else {
+          document.getElementById('activeOrderSection').style.display = 'none';
+        }
+      } catch (e) {
+        console.warn('Track order sync error', e);
+      }
+    }
+
+    let activeOrderId = null;
+
+    function renderTracker(trackData) {
+      const { order, ordersAhead, estimatedWaitMinutes, nowPreparingTokens } = trackData;
+      activeOrderId = order.id;
+
+      document.getElementById('activeOrderSection').style.display = 'block';
+      document.getElementById('heroTokenNumber').innerText = `#${order.token_number}`;
+      document.getElementById('heroTableInfo').innerText = `Table #${order.table_number} • Placed at ${formatTime(order.created_at)}`;
+      document.getElementById('trackerTotalAmount').innerText = formatCurrency(order.total_amount);
+
+      document.getElementById('ordersAheadVal').innerText = ordersAhead;
+      document.getElementById('waitTimeVal').innerText = (order.status === 'Ready' || order.status === 'Picked up') ? 'Ready' : `~${estimatedWaitMinutes} min`;
+
+      document.getElementById('nowPreparingTokensText').innerText = 
+        nowPreparingTokens && nowPreparingTokens.length > 0 
+          ? nowPreparingTokens.map(t => `#${t}`).join(', ') 
+          : 'None';
+
+      // 4-step progress states
+      const steps = ['stepReceived', 'stepPreparing', 'stepReady', 'stepPickedUp'];
+      steps.forEach(s => {
+        const el = document.getElementById(s);
+        el.classList.remove('active', 'completed');
+      });
+
+      const cancelBox = document.getElementById('cancelOrderBox');
+      const readyBanner = document.getElementById('readyBanner');
+
+      if (order.status === 'Received') {
+        document.getElementById('stepReceived').classList.add('active');
+        cancelBox.style.display = 'flex';
+        readyBanner.style.display = 'none';
+      } else if (order.status === 'Preparing') {
+        document.getElementById('stepReceived').classList.add('completed');
+        document.getElementById('stepPreparing').classList.add('active');
+        cancelBox.style.display = 'none';
+        readyBanner.style.display = 'none';
+      } else if (order.status === 'Ready') {
+        document.getElementById('stepReceived').classList.add('completed');
+        document.getElementById('stepPreparing').classList.add('completed');
+        document.getElementById('stepReady').classList.add('active');
+        cancelBox.style.display = 'none';
+        readyBanner.style.display = 'block';
+
+        if (knownStatus !== 'Ready') {
+          playOrderReadySound();
+          showToast('🎉 Your food is ready for pickup!', 'success', 5000);
+        }
+      } else if (order.status === 'Picked up') {
+        steps.forEach(s => document.getElementById(s).classList.add('completed'));
+        cancelBox.style.display = 'none';
+        readyBanner.style.display = 'none';
+      } else if (order.status === 'Cancelled') {
+        document.getElementById('activeOrderSection').style.display = 'none';
+        localStorage.removeItem('tabletoken_active_order');
+        showToast(`Order #${order.token_number} was cancelled: ${order.cancel_reason || ''}`, 'error');
+        return;
+      }
+
+      knownStatus = order.status;
+
+      // Render tracked items breakdown
+      const listEl = document.getElementById('trackerItemsList');
+      if (order.items && order.items.length > 0) {
+        listEl.innerHTML = order.items.map(it => `
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span><span class="diet-dot ${it.is_veg ? 'veg' : 'non-veg'}"></span> ${escapeHtml(it.item_name)} &times; ${it.quantity}</span>
+            <span>${formatCurrency(it.price * it.quantity)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Cancel Active Order Handler (Only allowed while status is Received)
+    async function handleCancelActiveOrder() {
+      if (!activeOrderId) return;
+      const confirmCancel = confirm('Are you sure you want to cancel this order?');
+      if (!confirmCancel) return;
+
+      const btn = document.getElementById('cancelOrderBtn');
+      btn.disabled = true;
+      btn.innerText = 'Cancelling...';
+
+      try {
+        const res = await fetch(`/api/orders/${activeOrderId}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Cancelled by customer' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Order cancelled successfully.', 'info');
+          localStorage.removeItem('tabletoken_active_order');
+          activeToken = null;
+          document.getElementById('activeOrderSection').style.display = 'none';
+        } else {
+          showToast(data.error || 'Could not cancel order.', 'error');
+        }
+      } catch (err) {
+        showToast('Connection error while cancelling.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Cancel Order';
+      }
+    }
+
+    function scrollToMenu() {
+      document.getElementById('menuSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function dismissTracker() {
+      document.getElementById('activeOrderSection').style.display = 'none';
+    }
+
+    // 8. Past Orders History Modal
+    async function openHistoryModal() {
+      const modal = document.getElementById('historyModal');
+      const list = document.getElementById('historyListContainer');
+      modal.classList.add('open');
+      list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Loading your orders...</p>';
+
+      try {
+        const res = await fetch('/api/orders/my-orders');
+        const data = await res.json();
+        if (data.success) {
+          if (!data.data || data.data.length === 0) {
+            list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">You have not placed any orders yet today.</p>';
+            return;
+          }
+          list.innerHTML = data.data.map(o => `
+            <div class="past-order-card">
+              <div class="past-order-header">
+                <div>
+                  <strong style="font-size:1.05rem;color:var(--primary-dark);">Token #${o.token_number}</strong>
+                  <span style="font-size:0.8rem;color:var(--text-muted);margin-left:6px;">${formatTime(o.created_at)}</span>
+                </div>
+                <span class="badge ${o.status === 'Ready' ? 'badge-veg' : (o.status === 'Cancelled' ? 'badge-nonveg' : '')}">
+                  ${o.status}
+                </span>
+              </div>
+              <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:6px;">
+                ${o.items ? o.items.map(it => `${escapeHtml(it.item_name)} (${it.quantity})`).join(', ') : ''}
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;">
+                <span style="font-weight:700;">Total: ${formatCurrency(o.total_amount)}</span>
+                ${o.status === 'Received' || o.status === 'Preparing' || o.status === 'Ready' ? `
+                  <button class="btn btn-outline btn-sm" onclick="trackPastOrder(${o.token_number})">Track Live</button>
+                ` : ''}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        list.innerHTML = '<p style="text-align:center;color:red;padding:20px;">Failed to load order history.</p>';
+      }
+    }
+
+    function trackPastOrder(tok) {
+      activeToken = tok;
+      closeHistoryModal();
+      trackOrder(tok);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.remove('open');
+    }
+
+    // 9. Real-Time SSE Sync with Polling Fallback
+    function initLiveSync() {
+      liveStream = createLiveStream(
+        (event, data) => {
+          if (event === 'order_status_updated' || event === 'queue_updated') {
+            if (activeToken) trackOrder(activeToken);
+          } else if (event === 'menu_updated') {
+            loadMenu();
+          }
+        },
+        () => {
+          if (activeToken) trackOrder(activeToken);
+        },
+        4000
+      );
+    }
+
+    // Start on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      initSession();
+    });
+  </script>
+</body>
+</html>

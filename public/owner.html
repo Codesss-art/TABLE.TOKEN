@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TableToken - Owner & Kitchen Command Center</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- Chart.js from CDN for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .kitchen-columns {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 900px) {
+      .kitchen-columns {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .kitchen-column {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 520px;
+    }
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 2px solid;
+    }
+    .column-header.col-received { border-color: var(--status-received); }
+    .column-header.col-preparing { border-color: var(--status-preparing); }
+    .column-header.col-ready { border-color: var(--status-ready); }
+    .col-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .col-count {
+      background: #ffffff;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+    }
+    .order-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .order-card.new-alert {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+      animation: pulseAlert 1.5s infinite;
+    }
+    @keyframes pulseAlert {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    .order-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .order-token-badge {
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: var(--primary-dark);
+      letter-spacing: -0.5px;
+    }
+    .order-meta-info {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .order-items-list {
+      background: var(--bg-main);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .order-notes-box {
+      font-size: 0.82rem;
+      color: #9a3412;
+      background: #fff7ed;
+      border: 1px solid #ffedd5;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .order-card-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .payment-select {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: #ffffff;
+      cursor: pointer;
+    }
+    .payment-select.unpaid { color: #dc2626; border-color: #fecaca; background: #fee2e2; }
+    .payment-select.cash { color: #16a34a; border-color: #bbf7d0; background: #dcfce7; }
+    .payment-select.upi { color: #2563eb; border-color: #bfdbfe; background: #dbeafe; }
+
+    /* Analytics Styles */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .analytics-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .analytics-val {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary-dark);
+      margin-top: 4px;
+    }
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 860px) {
+      .charts-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .chart-container {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Printable QR Cards */
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .qr-card {
+      background: #ffffff;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .qr-canvas-holder {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin: 12px 0;
+    }
+    @media print {
+      body { background: #ffffff !important; }
+      .no-print { display: none !important; }
+      .qr-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 24px !important;
+      }
+      .qr-card {
+        page-break-inside: avoid;
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header no-print">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">👨‍🍳</span>
+        <div class="brand-text">
+          <h1 id="headerOwnerRestName">TableToken Kitchen</h1>
+          <p>Owner Dashboard</p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <a href="/display" target="_blank" class="btn btn-outline btn-sm" title="Open TV Display">
+          📺 TV Display
+        </a>
+        <button id="soundToggleBtn" class="btn btn-outline btn-sm" onclick="toggleSound()">
+          <span id="soundIcon">🔊</span>
+          <span id="soundText">Sound On</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="handleOwnerLogout()" title="Sign Out">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 16px; padding-bottom: 60px;">
+    <!-- Navigation Tabs -->
+    <div class="dashboard-tabs no-print">
+      <button class="dash-tab-btn active" data-tab="live">🍳 Live Kitchen</button>
+      <button class="dash-tab-btn" data-tab="menu">📋 Menu Manager</button>
+      <button class="dash-tab-btn" data-tab="qr">🔲 Table QR Codes</button>
+      <button class="dash-tab-btn" data-tab="customers">👥 Customers</button>
+      <button class="dash-tab-btn" data-tab="analytics">📊 Sales & Analytics</button>
+      <button class="dash-tab-btn" data-tab="settings">⚙️ Settings</button>
+    </div>
+
+    <!-- TAB 1: LIVE KITCHEN BOARD -->
+    <section id="tabLive" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; font-weight: 800;">Real-Time Incoming Orders</h2>
+        <span id="liveStatusPill" class="badge" style="background:#dcfce7;color:#166534;">🟢 Live SSE Sync</span>
+      </div>
+
+      <div class="kitchen-columns">
+        <!-- 1. Received / New Orders -->
+        <div class="kitchen-column">
+          <div class="column-header col-received">
+            <span class="col-title">📥 New Orders</span>
+            <span id="countReceived" class="col-count">0</span>
+          </div>
+          <div id="listReceived" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
+        <!-- 2. Now Preparing -->
+        <div class="kitchen-column">
+          <div class="column-header col-preparing">
+            <span class="col-title">🍳 Now Preparing</span>
+            <span id="countPreparing" class="col-count">0</span>
+          </div>
+          <div id="listPreparing" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
+        <!-- 3. Ready for Pickup -->
+        <div class="kitchen-column">
+          <div class="column-header col-ready">
+            <span class="col-title">🔔 Ready for Pickup</span>
+            <span id="countReady" class="col-count">0</span>
+          </div>
+          <div id="listReady" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MENU MANAGER -->
+    <section id="tabMenu" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Menu Management</h2>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">Add, edit, delete, or toggle availability of dishes instantly.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddMenuModal()">
+          + Add New Dish
+        </button>
+      </div>
+
+      <div class="card" style="padding: 16px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 10px 8px;">Dish</th>
+              <th style="padding: 10px 8px;">Category</th>
+              <th style="padding: 10px 8px;">Price</th>
+              <th style="padding: 10px 8px;">Diet</th>
+              <th style="padding: 10px 8px;">In Stock?</th>
+              <th style="padding: 10px 8px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="menuTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 3: TABLE QR CODES (PRINTABLE) -->
+    <section id="tabQr" class="tab-content" style="display: none;">
+      <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Table QR Code Placards</h2>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">
+            Each table has a secret token. Print placards for tables or regenerate tokens if leaked.
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline" onclick="openAddTableModal()">
+            + Add Table
+          </button>
+          <button class="btn btn-primary" onclick="window.print()">
+            🖨️ Print QR Codes
+          </button>
+        </div>
+      </div>
+
+      <div class="qr-grid" id="qrContainer">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 4: CUSTOMERS DIRECTORY -->
+    <section id="tabCustomers" class="tab-content" style="display: none;">
+      <div style="margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; font-weight: 800;">Customer Directory</h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">Registered customer visits and order summaries.</p>
+      </div>
+
+      <div class="card" style="padding: 16px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.92rem; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">
+              <th style="padding: 10px 8px;">Customer Name</th>
+              <th style="padding: 10px 8px;">Phone Number</th>
+              <th style="padding: 10px 8px; text-align: center;">Total Orders</th>
+              <th style="padding: 10px 8px; text-align: right;">Total Spent</th>
+              <th style="padding: 10px 8px; text-align: right;">Last Visited</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 5: SALES & ANALYTICS -->
+    <section id="tabAnalytics" class="tab-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Business Sales & Analytics</h2>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">Daily financial metrics, orders volume, and preparation speed.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Date:</label>
+          <input type="date" id="analyticsDatePicker" class="form-input" style="padding: 6px 12px; width: auto; font-weight: 600;" onchange="loadAnalytics()">
+          <button class="btn btn-outline btn-sm" onclick="exportOrdersCsv()" style="font-weight: 700;">
+            📥 Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Stat Cards -->
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Sales</div>
+          <div class="analytics-val" id="statSales">₹0</div>
+          <div style="font-size: 0.78rem; color: #16a34a; font-weight: 600; margin-top: 4px;">Net order revenue</div>
+        </div>
+
+        <div class="analytics-card">
+          <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Orders</div>
+          <div class="analytics-val" id="statOrders">0</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Orders placed today</div>
+        </div>
+
+        <div class="analytics-card">
+          <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Avg Prep Time</div>
+          <div class="analytics-val" id="statAvgPrep">0 min</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Received to ready</div>
+        </div>
+
+        <div class="analytics-card">
+          <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Payments Split</div>
+          <div id="statPaymentBreakdown" style="font-size: 0.88rem; font-weight: 700; margin-top: 8px; color: var(--text-main);">
+            Loading...
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-row">
+        <div class="chart-container">
+          <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 12px;">Sales by Hour</h3>
+          <div style="position: relative; height: 260px;">
+            <canvas id="salesByHourChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 12px;">Top 5 Selling Dishes</h3>
+          <div style="position: relative; height: 260px;">
+            <canvas id="topItemsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Items Table -->
+      <div class="card" style="padding: 18px;">
+        <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 12px;">Top Selling Items Breakdown</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); text-align: left; font-size: 0.78rem; text-transform: uppercase;">
+              <th style="padding: 8px;">Rank</th>
+              <th style="padding: 8px;">Dish Name</th>
+              <th style="padding: 8px; text-align: center;">Portions Sold</th>
+              <th style="padding: 8px; text-align: right;">Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="topItemsTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 6: SETTINGS -->
+    <section id="tabSettings" class="tab-content" style="display: none;">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 1.3rem; font-weight: 800;">Restaurant Settings</h2>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">Configure restaurant operational parameters.</p>
+        </div>
+
+        <div class="card" style="padding: 24px;">
+          <form id="settingsForm" onsubmit="handleSaveSettings(event)">
+            <div class="form-group">
+              <label class="form-label" for="settingRestName">Restaurant Name *</label>
+              <input type="text" id="settingRestName" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settingSessionHours">Table QR Session Lifetime (Hours) *</label>
+              <input type="number" id="settingSessionHours" class="form-input" min="1" max="24" step="0.5" required>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">
+                After this duration, customers must re-scan the table QR code to view the menu.
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settingPrepMinutes">Default Estimated Preparation Time (Minutes) *</label>
+              <input type="number" id="settingPrepMinutes" class="form-input" min="5" max="60" required>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">
+                Used to estimate wait times for customers when there are no historical completed orders.
+              </span>
+            </div>
+
+            <button type="submit" id="saveSettingsBtn" class="btn btn-primary btn-lg" style="margin-top: 10px;">
+              Save Settings
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / Edit Menu Modal -->
+  <div id="menuModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="menuModalTitle" class="modal-title">Add Menu Item</h3>
+        <button class="modal-close-btn" onclick="closeMenuModal()">&times;</button>
+      </div>
+
+      <form id="menuItemForm" onsubmit="handleSaveMenuItem(event)">
+        <input type="hidden" id="editItemId">
+        <div class="form-group">
+          <label class="form-label" for="menuItemName">Item Name *</label>
+          <input type="text" id="menuItemName" class="form-input" placeholder="e.g. Garlic Naan" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="menuItemCategory">Category *</label>
+            <select id="menuItemCategory" class="form-select" required>
+              <option value="Starters">Starters</option>
+              <option value="Mains">Mains</option>
+              <option value="Drinks">Drinks</option>
+              <option value="Desserts">Desserts</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="menuItemPrice">Price (₹) *</label>
+            <input type="number" id="menuItemPrice" class="form-input" min="1" step="1" placeholder="e.g. 150" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="menuItemDiet">Dietary Type</label>
+            <select id="menuItemDiet" class="form-select">
+              <option value="1">Pure Veg 🟢</option>
+              <option value="0">Non-Veg 🔴</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="menuItemEmoji">Icon / Emoji</label>
+            <input type="text" id="menuItemEmoji" class="form-input" placeholder="e.g. 🍛, 🍗, 🫓" maxlength="4">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="menuItemDesc">Description</label>
+          <textarea id="menuItemDesc" class="form-textarea" rows="2" placeholder="Brief description of dish..."></textarea>
+        </div>
+
+        <button type="submit" id="saveMenuBtn" class="btn btn-primary btn-lg">
+          Save Item
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/qrcode.min.js"></script>
+  <script>
+    let soundEnabled = true;
+    let knownOrdersMap = new Map();
+    let hourlyChartInstance = null;
+    let topItemsChartInstance = null;
+    let liveStream = null;
+
+    // Check Session Auth on Load
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/owner/settings');
+        if (res.status === 401) {
+          window.location.href = '/owner/login';
+          return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          if (data.data.restaurant_name) {
+            document.getElementById('headerOwnerRestName').innerText = `${data.data.restaurant_name} Kitchen`;
+          }
+          initDashboard();
+        } else {
+          window.location.href = '/owner/login';
+        }
+      } catch (e) {
+        window.location.href = '/owner/login';
+      }
+    }
+
+    // Toggle Sound
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundIcon').innerText = soundEnabled ? '🔊' : '🔇';
+      document.getElementById('soundText').innerText = soundEnabled ? 'Sound On' : 'Muted';
+      showToast(soundEnabled ? 'Kitchen sound alerts enabled.' : 'Kitchen sound alerts muted.', 'info');
+    }
+
+    // Sign Out
+    async function handleOwnerLogout() {
+      await fetch('/api/owner/logout', { method: 'POST' });
+      window.location.href = '/owner/login';
+    }
+
+    // Navigation Tabs
+    document.querySelectorAll('.dash-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const tabKey = btn.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+        if (tabKey === 'live') {
+          document.getElementById('tabLive').style.display = 'block';
+          loadActiveOrders();
+        } else if (tabKey === 'menu') {
+          document.getElementById('tabMenu').style.display = 'block';
+          loadMenuManager();
+        } else if (tabKey === 'qr') {
+          document.getElementById('tabQr').style.display = 'block';
+          loadTableQRCodes();
+        } else if (tabKey === 'customers') {
+          document.getElementById('tabCustomers').style.display = 'block';
+          loadCustomers();
+        } else if (tabKey === 'analytics') {
+          document.getElementById('tabAnalytics').style.display = 'block';
+          loadAnalytics();
+        } else if (tabKey === 'settings') {
+          document.getElementById('tabSettings').style.display = 'block';
+          loadSettings();
+        }
+      });
+    });
+
+    // 1. LIVE KITCHEN BOARD
+    async function loadActiveOrders() {
+      try {
+        const res = await fetch('/api/owner/orders/active');
+        const data = await res.json();
+        if (data.success) {
+          renderKitchenBoard(data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to load active orders', err);
+      }
+    }
+
+    function renderKitchenBoard(orders) {
+      const received = orders.filter(o => o.status === 'Received');
+      const preparing = orders.filter(o => o.status === 'Preparing');
+      const ready = orders.filter(o => o.status === 'Ready');
+
+      document.getElementById('countReceived').innerText = received.length;
+      document.getElementById('countPreparing').innerText = preparing.length;
+      document.getElementById('countReady').innerText = ready.length;
+
+      // Sound and visual alert for newly received orders
+      let hasBrandNewOrder = false;
+      received.forEach(o => {
+        if (!knownOrdersMap.has(o.id)) {
+          hasBrandNewOrder = true;
+          knownOrdersMap.set(o.id, true);
+        }
+      });
+
+      if (hasBrandNewOrder && soundEnabled) {
+        playNewOrderSound();
+        showToast('🔔 New kitchen order received!', 'info');
+      }
+
+      renderColumn('listReceived', received, 'Received');
+      renderColumn('listPreparing', preparing, 'Preparing');
+      renderColumn('listReady', ready, 'Ready');
+    }
+
+    function renderColumn(containerId, list, colStatus) {
+      const el = document.getElementById(containerId);
+      if (list.length === 0) {
+        el.innerHTML = `<div style="text-align:center;padding:40px 10px;color:var(--text-muted);font-size:0.9rem;">No orders here</div>`;
+        return;
+      }
+
+      el.innerHTML = list.map(order => {
+        const elapsed = getElapsedMinutes(order.created_at);
+        const paymentClass = order.payment_status === 'Paid cash' ? 'cash' : (order.payment_status === 'Paid UPI' ? 'upi' : 'unpaid');
+
+        return `
+          <div class="order-card ${colStatus === 'Received' ? 'new-alert' : ''}" id="orderCard-${order.id}">
+            <div class="order-card-header">
+              <div>
+                <span class="order-token-badge">Token #${order.token_number}</span>
+                <div style="font-weight:700;font-size:1rem;color:var(--text-main);">Table #${order.table_number}</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge" style="background:#f1f5f9;color:var(--text-muted);">${elapsed}m ago</span>
+                <div style="font-size:0.85rem;font-weight:800;color:var(--primary-dark);margin-top:2px;">${formatCurrency(order.total_amount)}</div>
+              </div>
+            </div>
+
+            <div class="order-meta-info">
+              👤 <strong>${escapeHtml(order.customer_name)}</strong> • 📞 ${order.customer_phone ? order.customer_phone : 'Walk-in'}
+            </div>
+
+            <!-- Items -->
+            <div class="order-items-list">
+              ${order.items.map(it => `
+                <div style="display:flex;justify-content:space-between;">
+                  <span><span class="diet-dot ${it.is_veg ? 'veg' : 'non-veg'}"></span> <strong>${it.quantity}&times;</strong> ${escapeHtml(it.item_name)}</span>
+                  <span style="color:var(--text-muted);">${formatCurrency(it.price * it.quantity)}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            ${order.notes ? `
+              <div class="order-notes-box">
+                📝 Note: "${escapeHtml(order.notes)}"
+              </div>
+            ` : ''}
+
+            <!-- Payment Status Selector -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:0.78rem;font-weight:700;color:var(--text-muted);">Payment:</span>
+              <select class="payment-select ${paymentClass}" onchange="changePaymentStatus(${order.id}, this.value)">
+                <option value="Unpaid" ${order.payment_status === 'Unpaid' ? 'selected' : ''}>❌ Unpaid</option>
+                <option value="Paid cash" ${order.payment_status === 'Paid cash' ? 'selected' : ''}>💵 Paid Cash</option>
+                <option value="Paid UPI" ${order.payment_status === 'Paid UPI' ? 'selected' : ''}>📱 Paid UPI</option>
+              </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="order-card-actions">
+              ${colStatus === 'Received' ? `
+                <button class="btn btn-primary btn-sm" style="flex:1;" onclick="updateOrderStatus(${order.id}, 'Preparing')">
+                  Start Preparing &rarr;
+                </button>
+              ` : ''}
+
+              ${colStatus === 'Preparing' ? `
+                <button class="btn btn-success btn-sm" style="flex:1;" onclick="updateOrderStatus(${order.id}, 'Ready')">
+                  Mark Ready 🔔
+                </button>
+              ` : ''}
+
+              ${colStatus === 'Ready' ? `
+                <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="updateOrderStatus(${order.id}, 'Picked up')">
+                  Complete / Picked Up ✔️
+                </button>
+              ` : ''}
+
+              <button class="btn btn-outline btn-sm" style="color:#ef4444;" onclick="promptCancelOrder(${order.id})" title="Cancel Order">
+                Cancel
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateOrderStatus(orderId, status, cancelReason = '') {
+      try {
+        const res = await fetch(`/api/owner/orders/${orderId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, cancel_reason: cancelReason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadActiveOrders();
+          showToast(`Order status updated to ${status}`, 'success');
+        } else {
+          showToast(data.error || 'Failed to update order status', 'error');
+        }
+      } catch (err) {
+        showToast('Connection error', 'error');
+      }
+    }
+
+    async function changePaymentStatus(orderId, payment_status) {
+      try {
+        const res = await fetch(`/api/owner/orders/${orderId}/payment`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_status })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Payment marked as ${payment_status}`, 'info');
+          loadActiveOrders();
+        }
+      } catch (err) {
+        showToast('Could not update payment status', 'error');
+      }
+    }
+
+    function promptCancelOrder(orderId) {
+      const reason = prompt('Please enter cancellation reason for this order:', 'Out of ingredients / Kitchen closed');
+      if (reason !== null && reason.trim()) {
+        updateOrderStatus(orderId, 'Cancelled', reason.trim());
+      }
+    }
+
+    // 2. MENU MANAGER
+    let adminMenuItems = [];
+
+    async function loadMenuManager() {
+      try {
+        const res = await fetch('/api/owner/menu');
+        const data = await res.json();
+        if (data.success) {
+          adminMenuItems = data.data;
+          renderMenuTable();
+        }
+      } catch (e) {
+        showToast('Error loading menu', 'error');
+      }
+    }
+
+    function renderMenuTable() {
+      const tbody = document.getElementById('menuTableBody');
+      tbody.innerHTML = adminMenuItems.map(item => `
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 12px 8px;">
+            <div style="font-weight: 700; display:flex; align-items:center; gap:6px;">
+              <span>${item.image_emoji || '🍽️'}</span>
+              <span>${escapeHtml(item.name)}</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(item.description || '')}</div>
+          </td>
+          <td style="padding: 12px 8px; color: var(--text-muted);">${item.category}</td>
+          <td style="padding: 12px 8px; font-weight: 700;">${formatCurrency(item.price)}</td>
+          <td style="padding: 12px 8px;">
+            <span class="diet-dot ${item.is_veg ? 'veg' : 'non-veg'}"></span>
+            ${item.is_veg ? 'Veg' : 'Non-Veg'}
+          </td>
+          <td style="padding: 12px 8px;">
+            <button class="btn btn-sm ${item.is_available ? 'btn-success' : 'btn-secondary'}" onclick="toggleMenuItemStock(${item.id}, ${item.is_available ? 0 : 1})">
+              ${item.is_available ? 'In Stock ✔️' : 'Out of Stock ❌'}
+            </button>
+          </td>
+          <td style="padding: 12px 8px; text-align: right;">
+            <button class="btn btn-outline btn-sm" onclick="openEditMenuModal(${item.id})">Edit</button>
+            <button class="btn btn-outline btn-sm" style="color:#ef4444;" onclick="deleteMenuItem(${item.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleMenuItemStock(id, is_available) {
+      try {
+        const res = await fetch(`/api/owner/menu/${id}/toggle`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_available })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Item availability updated`, 'info');
+          loadMenuManager();
+        }
+      } catch (err) {
+        showToast('Failed to toggle stock', 'error');
+      }
+    }
+
+    function openAddMenuModal() {
+      document.getElementById('menuModalTitle').innerText = 'Add Menu Item';
+      document.getElementById('editItemId').value = '';
+      document.getElementById('menuItemName').value = '';
+      document.getElementById('menuItemCategory').value = 'Mains';
+      document.getElementById('menuItemPrice').value = '';
+      document.getElementById('menuItemDiet').value = '1';
+      document.getElementById('menuItemEmoji').value = '🍽️';
+      document.getElementById('menuItemDesc').value = '';
+      document.getElementById('menuModal').classList.add('open');
+    }
+
+    function openEditMenuModal(id) {
+      const item = adminMenuItems.find(i => i.id === id);
+      if (!item) return;
+      document.getElementById('menuModalTitle').innerText = 'Edit Menu Item';
+      document.getElementById('editItemId').value = item.id;
+      document.getElementById('menuItemName').value = item.name;
+      document.getElementById('menuItemCategory').value = item.category;
+      document.getElementById('menuItemPrice').value = item.price;
+      document.getElementById('menuItemDiet').value = item.is_veg ? '1' : '0';
+      document.getElementById('menuItemEmoji').value = item.image_emoji || '🍽️';
+      document.getElementById('menuItemDesc').value = item.description || '';
+      document.getElementById('menuModal').classList.add('open');
+    }
+
+    function closeMenuModal() {
+      document.getElementById('menuModal').classList.remove('open');
+    }
+
+    async function handleSaveMenuItem(e) {
+      e.preventDefault();
+      const id = document.getElementById('editItemId').value;
+      const payload = {
+        name: document.getElementById('menuItemName').value,
+        category: document.getElementById('menuItemCategory').value,
+        price: parseFloat(document.getElementById('menuItemPrice').value),
+        is_veg: document.getElementById('menuItemDiet').value === '1',
+        image_emoji: document.getElementById('menuItemEmoji').value || '🍽️',
+        description: document.getElementById('menuItemDesc').value
+      };
+
+      const url = id ? `/api/owner/menu/${id}` : '/api/owner/menu';
+      const method = id ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(id ? 'Item updated!' : 'Item added!', 'success');
+          closeMenuModal();
+          loadMenuManager();
+        } else {
+          showToast(data.error || 'Failed to save item', 'error');
+        }
+      } catch (err) {
+        showToast('Error saving menu item', 'error');
+      }
+    }
+
+    async function deleteMenuItem(id) {
+      if (!confirm('Are you sure you want to delete this menu dish?')) return;
+      try {
+        const res = await fetch(`/api/owner/menu/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Menu item deleted.', 'info');
+          loadMenuManager();
+        }
+      } catch (err) {
+        showToast('Error deleting item', 'error');
+      }
+    }
+
+    // 3. TABLE QR CODES
+    async function loadTableQRCodes() {
+      try {
+        const res = await fetch('/api/owner/tables');
+        const data = await res.json();
+        if (data.success) {
+          renderTableQRCodes(data.data, data.baseUrl);
+        }
+      } catch (err) {
+        showToast('Failed to load tables', 'error');
+      }
+    }
+
+    function renderTableQRCodes(tables, baseUrl) {
+      const container = document.getElementById('qrContainer');
+      container.innerHTML = '';
+
+      tables.forEach(table => {
+        const card = document.createElement('div');
+        card.className = 'qr-card';
+        card.innerHTML = `
+          <div style="font-size:0.75rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;">Scan to Order</div>
+          <h3 style="font-size:1.5rem;font-weight:900;color:var(--primary-dark);margin:4px 0;">Table #${table.table_number}</h3>
+          <div class="qr-canvas-holder" id="qrCanvas-${table.id}"></div>
+          <div style="font-family:monospace;font-size:0.72rem;color:var(--text-muted);word-break:break-all;max-width:220px;margin-bottom:12px;">
+            ${table.scan_url}
+          </div>
+          <div class="no-print" style="display:flex;gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="regenerateQR(${table.id})">🔄 Reset Token</button>
+            <button class="btn btn-outline btn-sm" style="color:#ef4444;" onclick="deleteTable(${table.id})">Remove</button>
+          </div>
+        `;
+        container.appendChild(card);
+
+        // Generate QR code using drawQRCode (window.drawQRCode from qrcode.min.js)
+        const qrHolder = document.getElementById(`qrCanvas-${table.id}`);
+        if (typeof drawQRCode === 'function') {
+          drawQRCode(qrHolder, table.scan_url, 140);
+        } else {
+          qrHolder.innerHTML = '<div style="padding:8px;font-size:11px;color:#ef4444;">QR library not loaded</div>';
+        }
+      });
+    }
+
+    async function regenerateQR(id) {
+      if (!confirm('Regenerate QR token for this table? Existing printouts for this table will stop working.')) return;
+      try {
+        const res = await fetch(`/api/owner/tables/${id}/regenerate-qr`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Table QR token regenerated!', 'success');
+          loadTableQRCodes();
+        }
+      } catch (err) {
+        showToast('Failed to regenerate QR', 'error');
+      }
+    }
+
+    async function deleteTable(id) {
+      if (!confirm('Remove this table?')) return;
+      try {
+        const res = await fetch(`/api/owner/tables/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Table removed', 'info');
+          loadTableQRCodes();
+        }
+      } catch (err) {
+        showToast('Error removing table', 'error');
+      }
+    }
+
+    function openAddTableModal() {
+      const num = prompt('Enter new table number:');
+      if (num && !isNaN(parseInt(num, 10))) {
+        fetch('/api/owner/tables', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table_number: parseInt(num, 10) })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            showToast(`Table #${num} added!`, 'success');
+            loadTableQRCodes();
+          } else {
+            showToast(data.error || 'Failed to add table', 'error');
+          }
+        });
+      }
+    }
+
+    // 4. CUSTOMERS DIRECTORY
+    async function loadCustomers() {
+      try {
+        const res = await fetch('/api/owner/customers');
+        const data = await res.json();
+        if (data.success) {
+          const tbody = document.getElementById('customersTableBody');
+          if (data.data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No customers registered yet.</td></tr>`;
+            return;
+          }
+          tbody.innerHTML = data.data.map(c => `
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 10px 8px; font-weight:700;">${escapeHtml(c.name)}</td>
+              <td style="padding: 10px 8px; font-family:monospace; font-weight:600;">+91 ${c.phone}</td>
+              <td style="padding: 10px 8px; text-align:center;">${c.total_orders}</td>
+              <td style="padding: 10px 8px; text-align:right; font-weight:700;">${formatCurrency(c.total_spent)}</td>
+              <td style="padding: 10px 8px; text-align:right; color:var(--text-muted); font-size:0.82rem;">${c.last_visit || 'N/A'}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        showToast('Failed to load customers', 'error');
+      }
+    }
+
+    // 5. SALES & ANALYTICS
+    async function loadAnalytics() {
+      const dateInput = document.getElementById('analyticsDatePicker');
+      if (!dateInput.value) {
+        dateInput.value = getTodayString();
+      }
+      const selectedDate = dateInput.value;
+
+      try {
+        const res = await fetch(`/api/owner/analytics?date=${selectedDate}`);
+        const data = await res.json();
+        if (data.success) {
+          renderAnalytics(data.data);
+        }
+      } catch (err) {
+        showToast('Error loading analytics', 'error');
+      }
+    }
+
+    function renderAnalytics(analytics) {
+      document.getElementById('statSales').innerText = formatCurrency(analytics.totalSales);
+      document.getElementById('statOrders').innerText = analytics.totalOrders;
+      document.getElementById('statAvgPrep').innerText = `${analytics.averagePrepTimeMinutes} min`;
+
+      // Payment Breakdown
+      const payments = analytics.paymentCounts || [];
+      const paymentSummary = payments.map(p => `${p.payment_status}: ${p.count} (${formatCurrency(p.total)})`).join(' • ');
+      document.getElementById('statPaymentBreakdown').innerText = paymentSummary || 'No payments recorded';
+
+      // Top Items Table
+      const topTbody = document.getElementById('topItemsTableBody');
+      if (analytics.topItems.length === 0) {
+        topTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No orders recorded for this date.</td></tr>`;
+      } else {
+        topTbody.innerHTML = analytics.topItems.map((item, idx) => `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px; font-weight: 800;">#${idx + 1}</td>
+            <td style="padding: 8px; font-weight: 700;">${escapeHtml(item.item_name)}</td>
+            <td style="padding: 8px; text-align: center;">${item.total_qty}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 700;">${formatCurrency(item.total_revenue)}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Chart 1: Sales by Hour
+      const ctxHour = document.getElementById('salesByHourChart').getContext('2d');
+      if (hourlyChartInstance) hourlyChartInstance.destroy();
+
+      hourlyChartInstance = new Chart(ctxHour, {
+        type: 'bar',
+        data: {
+          labels: analytics.salesByHour.map(h => h.label),
+          datasets: [{
+            label: 'Sales (₹)',
+            data: analytics.salesByHour.map(h => h.sales),
+            backgroundColor: 'rgba(249, 115, 22, 0.75)',
+            borderColor: '#f97316',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: v => '₹' + v } }
+          }
+        }
+      });
+
+      // Chart 2: Top 5 Items
+      const ctxTop = document.getElementById('topItemsChart').getContext('2d');
+      if (topItemsChartInstance) topItemsChartInstance.destroy();
+
+      topItemsChartInstance = new Chart(ctxTop, {
+        type: 'doughnut',
+        data: {
+          labels: analytics.topItems.map(i => i.item_name),
+          datasets: [{
+            data: analytics.topItems.map(i => i.total_qty),
+            backgroundColor: [
+              '#f97316', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    function exportOrdersCsv() {
+      const date = document.getElementById('analyticsDatePicker').value || getTodayString();
+      window.location.href = `/api/owner/orders/export-csv?date=${date}`;
+    }
+
+    // 6. SETTINGS
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/owner/settings');
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('settingRestName').value = data.data.restaurant_name || '';
+          document.getElementById('settingSessionHours').value = data.data.session_duration_hours || '3';
+          document.getElementById('settingPrepMinutes').value = data.data.average_prep_time_minutes || '12';
+        }
+      } catch (err) {
+        showToast('Failed to load settings', 'error');
+      }
+    }
+
+    async function handleSaveSettings(e) {
+      e.preventDefault();
+      const payload = {
+        restaurant_name: document.getElementById('settingRestName').value.trim(),
+        session_duration_hours: document.getElementById('settingSessionHours').value,
+        average_prep_time_minutes: document.getElementById('settingPrepMinutes').value
+      };
+
+      try {
+        const res = await fetch('/api/owner/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Settings saved successfully!', 'success');
+          document.getElementById('headerOwnerRestName').innerText = `${payload.restaurant_name} Kitchen`;
+        }
+      } catch (err) {
+        showToast('Error saving settings', 'error');
+      }
+    }
+
+    // 7. INITIALIZE REAL-TIME LIVE SYNC
+    function initDashboard() {
+      loadActiveOrders();
+
+      liveStream = createLiveStream(
+        (event, data) => {
+          if (event === 'order_created' || event === 'order_status_updated' || event === 'queue_updated') {
+            loadActiveOrders();
+          } else if (event === 'menu_updated') {
+            if (document.getElementById('tabMenu').style.display === 'block') {
+              loadMenuManager();
+            }
+          }
+        },
+        () => {
+          if (document.getElementById('tabLive').style.display !== 'none') {
+            loadActiveOrders();
+          }
+        },
+        3500
+      );
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+    });
+  </script>
+</body>
+</html>

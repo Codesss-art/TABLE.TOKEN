@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TableToken - Live Counter TV Display</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #ffffff;
+      font-family: var(--font-family);
+      margin: 0;
+      padding: 24px;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .tv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #1f293d;
+      margin-bottom: 24px;
+    }
+    .tv-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .tv-brand-icon {
+      font-size: 3.2rem;
+    }
+    .tv-brand-title {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -1px;
+    }
+    .tv-brand-sub {
+      font-size: 1rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .tv-time-box {
+      text-align: right;
+    }
+    .tv-clock {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: #fb923c;
+      font-variant-numeric: tabular-nums;
+    }
+    .tv-date {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .tv-columns {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      flex: 1;
+    }
+    @media (min-width: 800px) {
+      .tv-columns {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .tv-card {
+      background: #111827;
+      border: 2px solid #1f293d;
+      border-radius: 24px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .tv-card.preparing {
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .tv-card.ready {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: linear-gradient(180deg, #092e20 0%, #111827 100%);
+    }
+    .tv-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 2px solid;
+      margin-bottom: 24px;
+    }
+    .tv-card-header.preparing {
+      border-color: #f59e0b;
+    }
+    .tv-card-header.ready {
+      border-color: #10b981;
+    }
+    .tv-card-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tv-card-title.preparing {
+      color: #fbbf24;
+    }
+    .tv-card-title.ready {
+      color: #34d399;
+    }
+    .tv-count-badge {
+      background: #1f293d;
+      color: #ffffff;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+    .tv-tokens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 16px;
+      align-content: flex-start;
+      flex: 1;
+    }
+    .tv-token-item {
+      border-radius: 18px;
+      padding: 20px 10px;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    .tv-token-item.preparing {
+      background: #1f293d;
+      border: 2px solid #f59e0b;
+    }
+    .tv-token-item.ready {
+      background: #047857;
+      border: 3px solid #34d399;
+      animation: readyPulse 2s infinite ease-in-out;
+    }
+    .tv-token-number {
+      font-size: 3.4rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .tv-token-item.preparing .tv-token-number {
+      color: #fbbf24;
+    }
+    .tv-token-item.ready .tv-token-number {
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    .tv-token-sub {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-top: 6px;
+    }
+    .tv-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .tv-footer {
+      margin-top: 24px;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    @keyframes readyPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+      50% { transform: scale(1.04); box-shadow: 0 0 25px 8px rgba(52, 211, 153, 0.4); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+    }
+  </style>
+</head>
+<body>
+  <!-- TV Header -->
+  <header class="tv-header">
+    <div class="tv-brand">
+      <span class="tv-brand-icon">🍽️</span>
+      <div>
+        <div class="tv-brand-title">TableToken</div>
+        <div class="tv-brand-sub">Counter Order Display</div>
+      </div>
+    </div>
+    <div class="tv-time-box">
+      <div id="tvClock" class="tv-clock">--:--:--</div>
+      <div id="tvDate" class="tv-date">Loading...</div>
+    </div>
+  </header>
+
+  <!-- Split Screen: Preparing vs Ready -->
+  <main class="tv-columns">
+    <!-- Preparing Column -->
+    <div class="tv-card preparing">
+      <div class="tv-card-header preparing">
+        <span class="tv-card-title preparing">
+          <span>🍳</span> Now Preparing
+        </span>
+        <span id="preparingCountBadge" class="tv-count-badge">0</span>
+      </div>
+      <div id="preparingTokensGrid" class="tv-tokens-grid">
+        <div class="tv-empty">No orders currently preparing</div>
+      </div>
+    </div>
+
+    <!-- Ready for Pickup Column -->
+    <div class="tv-card ready">
+      <div class="tv-card-header ready">
+        <span class="tv-card-title ready">
+          <span>🔔</span> Ready for Pickup
+        </span>
+        <span id="readyCountBadge" class="tv-count-badge">0</span>
+      </div>
+      <div id="readyTokensGrid" class="tv-tokens-grid">
+        <div class="tv-empty">No orders currently ready</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="tv-footer">
+    <span>💡 When your token flashes in <strong style="color:#34d399;">GREEN</strong>, please collect your fresh tray from the pickup counter.</span>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    let knownReadyTokens = new Set();
+    let initialLoad = true;
+
+    // Digital Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('tvClock').innerText = now.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      document.getElementById('tvDate').innerText = now.toLocaleDateString([], {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Fetch and render display tokens (Strictly token numbers and status ONLY - zero PII)
+    async function loadDisplayTokens() {
+      try {
+        const res = await fetch('/api/display/tokens');
+        const data = await res.json();
+        if (data.success) {
+          renderDisplayBoard(data.data);
+        }
+      } catch (e) {
+        console.warn('Display sync error', e);
+      }
+    }
+
+    function renderDisplayBoard({ preparing, ready }) {
+      // 1. Preparing Column
+      const prepGrid = document.getElementById('preparingTokensGrid');
+      document.getElementById('preparingCountBadge').innerText = preparing.length;
+
+      if (preparing.length === 0) {
+        prepGrid.innerHTML = `<div class="tv-empty">No orders currently preparing</div>`;
+      } else {
+        prepGrid.innerHTML = preparing.map(item => `
+          <div class="tv-token-item preparing">
+            <div class="tv-token-number">#${item.token_number}</div>
+            <div class="tv-token-sub">Table ${item.table_number}</div>
+          </div>
+        `).join('');
+      }
+
+      // 2. Ready Column
+      const readyGrid = document.getElementById('readyTokensGrid');
+      document.getElementById('readyCountBadge').innerText = ready.length;
+
+      let hasNewReadyArrival = false;
+      ready.forEach(item => {
+        if (!knownReadyTokens.has(item.token_number)) {
+          if (!initialLoad) hasNewReadyArrival = true;
+          knownReadyTokens.add(item.token_number);
+        }
+      });
+
+      if (hasNewReadyArrival) {
+        playOrderReadySound();
+      }
+      initialLoad = false;
+
+      if (ready.length === 0) {
+        readyGrid.innerHTML = `<div class="tv-empty">No orders currently ready</div>`;
+      } else {
+        readyGrid.innerHTML = ready.map(item => `
+          <div class="tv-token-item ready">
+            <div class="tv-token-number">#${item.token_number}</div>
+            <div class="tv-token-sub">Table ${item.table_number} &bull; Collect</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Initialize Page & Live Stream
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDisplayTokens();
+
+      createLiveStream(
+        (event, data) => {
+          if (event === 'order_status_updated' || event === 'order_created' || event === 'queue_updated') {
+            loadDisplayTokens();
+          }
+        },
+        () => {
+          loadDisplayTokens();
+        },
+        3000
+      );
+    });
+  </script>
+</body>
+</html>

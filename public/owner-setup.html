@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First-Time Setup - TableToken</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .setup-container {
+      max-width: 520px;
+      margin: 40px auto;
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px 28px;
+      box-shadow: var(--shadow-xl);
+    }
+    .setup-badge {
+      display: inline-block;
+      background: #ffedd5;
+      color: #c2410c;
+      font-weight: 800;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">🍽️</span>
+        <div class="brand-text">
+          <h1>TableToken</h1>
+          <p>Restaurant Management</p>
+        </div>
+      </div>
+      <span class="badge" style="background:#dcfce7;color:#15803d;">Initial Setup</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="setup-container">
+      <span class="setup-badge">One-Time Administrator Setup</span>
+      <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; color: var(--text-main);">
+        Welcome to TableToken!
+      </h2>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px;">
+        No owner account exists yet. Create your administrator account to take ownership of your kitchen dashboard and table QR codes.
+      </p>
+
+      <form id="setupForm" onsubmit="handleSetupSubmit(event)">
+        <!-- Restaurant Name -->
+        <div class="form-group">
+          <label class="form-label" for="restaurantName">Restaurant Name *</label>
+          <input type="text" id="restaurantName" class="form-input" value="The Royal Spice Table" required autofocus>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">This name appears on the customer menu and bills.</span>
+        </div>
+
+        <!-- Full Name -->
+        <div class="form-group">
+          <label class="form-label" for="ownerName">Owner / Manager Full Name *</label>
+          <input type="text" id="ownerName" class="form-input" placeholder="e.g. Ramesh Kumar" required>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="form-group">
+          <label class="form-label" for="ownerPhone">10-Digit Mobile Number (Login ID) *</label>
+          <input type="tel" id="ownerPhone" class="form-input" placeholder="9876543210" maxlength="10" pattern="[6-9][0-9]{9}" required>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">You will use this phone number to sign into the owner dashboard.</span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="ownerPassword">Master Password *</label>
+          <input type="password" id="ownerPassword" class="form-input" placeholder="At least 6 characters" minlength="6" required>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Stored securely with bcrypt hashing (no default PIN).</span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label class="form-label" for="confirmPassword">Confirm Password *</label>
+          <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter password" minlength="6" required>
+        </div>
+
+        <div id="setupErrorMsg" style="display: none; color: #dc2626; font-size: 0.85rem; font-weight: 600; margin-bottom: 14px; background: #fee2e2; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid #fecaca;"></div>
+
+        <button type="submit" id="setupBtn" class="btn btn-primary btn-lg" style="margin-top: 10px;">
+          Complete Setup & Enter Kitchen &rarr;
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    async function handleSetupSubmit(e) {
+      e.preventDefault();
+      const restInput = document.getElementById('restaurantName');
+      const nameInput = document.getElementById('ownerName');
+      const phoneInput = document.getElementById('ownerPhone');
+      const passInput = document.getElementById('ownerPassword');
+      const confirmInput = document.getElementById('confirmPassword');
+      const errEl = document.getElementById('setupErrorMsg');
+      const btn = document.getElementById('setupBtn');
+
+      const restaurant_name = restInput.value.trim();
+      const full_name = nameInput.value.trim();
+      const phone = phoneInput.value.trim().replace(/\D/g, '');
+      const password = passInput.value;
+      const confirmPass = confirmInput.value;
+
+      if (!/^[6-9]\d{9}$/.test(phone)) {
+        errEl.innerText = 'Please enter a valid 10-digit Indian phone number.';
+        errEl.style.display = 'block';
+        phoneInput.focus();
+        return;
+      }
+
+      if (password.length < 6) {
+        errEl.innerText = 'Password must be at least 6 characters.';
+        errEl.style.display = 'block';
+        passInput.focus();
+        return;
+      }
+
+      if (password !== confirmPass) {
+        errEl.innerText = 'Passwords do not match. Please re-enter.';
+        errEl.style.display = 'block';
+        confirmInput.focus();
+        return;
+      }
+
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.innerText = 'Creating Owner Account...';
+
+      try {
+        const res = await fetch('/api/owner/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurant_name,
+            full_name,
+            phone,
+            password
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = data.redirect || '/owner';
+        } else {
+          errEl.innerText = data.error || 'Failed to complete setup.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.innerText = 'Complete Setup & Enter Kitchen →';
+        }
+      } catch (err) {
+        errEl.innerText = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerText = 'Complete Setup & Enter Kitchen →';
+      }
+    }
+  </script>
+</body>
+</html>
